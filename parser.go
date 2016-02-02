@@ -82,34 +82,5 @@ func Parse(tokens []Token, stuck *TokenStuck) error {
 		}
 	}
 
-	// if length == 0 || (psm.CurrentState.State == Exp && {
-	// 	if stuck.Len() < 3 || stuck.Len()%2 != 1 {
-	// 		return fmt.Errorf("[Parse 1] internal err: result stuck is %v", tokens)
-	// 	}
-
-	// }
-
 	return nil
-}
-
-func Sum(tokens []*Token) float64 {
-	length := len(tokens)
-	if length == 1 {
-		return tokens[0].value
-	}
-
-	if length < 3 || length%2 != 1 {
-		return float64(0)
-	}
-
-	var sum float64 = tokens[0].value
-	for i := 1; i < length; i += 2 {
-		if tokens[i].kind == NumberToken || tokens[i+1].kind != NumberToken {
-			return float64(0)
-		}
-
-		sum = tokens[i].calc(sum, tokens[i+1].value)
-	}
-
-	return sum
 }

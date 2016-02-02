@@ -10,5 +10,5 @@ func TestParse(t *testing.T) {
 	stuck := NewTokenStuck()
 	err := Parse(tokens, stuck)
 	AssertNilError(t, err)
-	AssertEqual(t, Sum(stuck.ToSlice()), 9.0)
+	AssertEqual(t, sum(stuck.ToSlice()), 9.0)
 }
