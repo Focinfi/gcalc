@@ -19,5 +19,5 @@ func Caculate(exp string) (result float64, err error) {
 		return
 	}
 
-	return stuck.Ret().value, nil
+	return Sum(stuck.ToSlice()), nil
 }
