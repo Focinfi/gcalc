@@ -53,9 +53,7 @@ func (calc *Calculator) nextToken() *Token {
 	var token *Token
 	var err error
 	for calc.position <= len(calc.exp) && token == nil {
-		fmt.Println("[nextToken-before]", calc.position)
 		r := calc.getRune()
-		fmt.Println("[nextToken-after]", calc.position, string(r))
 		if token, err = calc.checkRune(r); err != nil {
 			panic(err.Error())
 		}
@@ -183,4 +181,8 @@ func (calc *Calculator) prasePrimaryExpression() float64 {
 
 func (calc *Calculator) Calculate() float64 {
 	return calc.parseExpression()
+}
+
+func Compute(exp string) float64 {
+	return NewCalculator(exp).Calculate()
 }
