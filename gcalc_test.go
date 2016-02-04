@@ -6,7 +6,8 @@ import (
 )
 
 func TestCalculator(t *testing.T) {
-	result, err := Calculate("  1 + 2* 4 - 1 -8 /1")
-	AssertNilError(t, err)
-	AssertEqual(t, result, 0.0)
+	calc := NewCalculator("(1.00 + 2) * 3-(1.0+ 2)* 3 ")
+	t.Log(string(calc.exp))
+	// t.Log(calc.nextToken())
+	AssertEqual(t, calc.Calculate(), float64(0))
 }
