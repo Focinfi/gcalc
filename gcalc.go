@@ -52,9 +52,10 @@ func (calc *Calculator) ungetToken(token *Token) {
 func (calc *Calculator) nextToken() *Token {
 	var token *Token
 	var err error
-	for calc.position <= len(calc.exp)-1 && token == nil {
+	for calc.position <= len(calc.exp) && token == nil {
+		fmt.Println("[nextToken-before]", calc.position)
 		r := calc.getRune()
-		// fmt.Println("[nextToken]", calc.position, string(r))
+		fmt.Println("[nextToken-after]", calc.position, string(r))
 		if token, err = calc.checkRune(r); err != nil {
 			panic(err.Error())
 		}
@@ -76,7 +77,6 @@ func (calc *Calculator) nextToken() *Token {
 }
 
 func (calc *Calculator) checkRune(c rune) (*Token, error) {
-
 	if c >= '0' && c <= '9' || c == '.' {
 		if !calc.nsm.Feed(string(c)) {
 			return nil, fmt.Errorf("char %s can not append to the number %s", string(c), calc.nsm.Records())
@@ -147,7 +147,7 @@ func (calc *Calculator) parseTerm() float64 {
 		}
 
 		token := calc.getToken()
-		fmt.Println("[parseTerm token]", token)
+		// fmt.Println("[parseTerm token]", token)
 		if token.kind == MulOperatorToken || token.kind == DivOperatorToken {
 			v1 = token.calc(v1, calc.prasePrimaryExpression())
 		} else {
@@ -161,8 +161,10 @@ func (calc *Calculator) parseTerm() float64 {
 
 func (calc *Calculator) prasePrimaryExpression() float64 {
 	token := calc.getToken()
-	fmt.Println("[prasePrimaryExpression]", token)
-	if token.kind == NumberToken {
+	if token.kind == SubOperatorToken {
+		v1 := calc.prasePrimaryExpression()
+		return -1 * v1
+	} else if token.kind == NumberToken {
 		return token.value
 	} else if token.kind == LPToken {
 		v1 := calc.parseExpression()
