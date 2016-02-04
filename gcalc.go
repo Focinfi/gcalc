@@ -7,38 +7,55 @@ import (
 )
 
 type Calculator struct {
-	exp                 []rune
-	position            int
-	nsm                 *NumberSM
-	currentRune         rune
-	isCurrentRuneExists bool
-	currentToken        *Token
+	exp                  []rune
+	position             int
+	nsm                  *NumberSM
+	currentRune          rune
+	isCurrentRuneExists  bool
+	currentToken         *Token
+	isCurrentTokenExists bool
 }
 
 func NewCalculator(exp string) *Calculator {
 	return &Calculator{exp: ([]rune)(strings.TrimSpace(exp)), nsm: &NumberSM{InitialState, ""}}
 }
 
-func (calc *Calculator) nextRune() rune {
-	if calc.isCurrentRuneExists {
-		return calc.currentRune
+func (calc *Calculator) getRune() rune {
+	if !calc.isCurrentRuneExists {
+		calc.currentRune = calc.exp[calc.position]
+		calc.position++
 	}
 
-	calc.currentRune = calc.exp[calc.position]
+	calc.isCurrentRuneExists = false
 	return calc.currentRune
 }
 
-func (calc *Calculator) nextToken() *Token {
-	if calc.currentToken != nil {
-		return calc.currentToken
+func (calc *Calculator) ungetRune(r rune) {
+	calc.isCurrentRuneExists = true
+	calc.currentRune = r
+}
+
+func (calc *Calculator) getToken() *Token {
+	if !calc.isCurrentTokenExists {
+		calc.currentToken = calc.nextToken()
 	}
 
+	calc.isCurrentTokenExists = false
+	return calc.currentToken
+}
+
+func (calc *Calculator) ungetToken(token *Token) {
+	calc.isCurrentTokenExists = true
+	calc.currentToken = token
+}
+
+func (calc *Calculator) nextToken() *Token {
 	var token *Token
 	var err error
 	for calc.position <= len(calc.exp)-1 && token == nil {
-		r := calc.nextRune()
+		r := calc.getRune()
 		// fmt.Println("[nextToken]", calc.position, string(r))
-		if token, err = calc.getToken(r); err != nil {
+		if token, err = calc.checkRune(r); err != nil {
 			panic(err.Error())
 		}
 
@@ -58,21 +75,17 @@ func (calc *Calculator) nextToken() *Token {
 	return token
 }
 
-func (calc *Calculator) getToken(c rune) (*Token, error) {
+func (calc *Calculator) checkRune(c rune) (*Token, error) {
 
 	if c >= '0' && c <= '9' || c == '.' {
 		if !calc.nsm.Feed(string(c)) {
 			return nil, fmt.Errorf("char %s can not append to the number %s", string(c), calc.nsm.Records())
-		} else {
-			calc.position++
-			calc.isCurrentRuneExists = false
-			return nil, nil
 		}
 	} else if separators.Has(c) {
 		if calc.nsm.IsNumber() {
 			f64, _ := strconv.ParseFloat(calc.nsm.Records(), 64)
 			calc.nsm.Reset()
-			calc.isCurrentRuneExists = true
+			calc.ungetRune(c)
 			return &Token{kind: NumberToken, value: f64}, nil
 		}
 
@@ -96,9 +109,6 @@ func (calc *Calculator) getToken(c rune) (*Token, error) {
 			return nil, fmt.Errorf("unexpected char %s", string(c))
 		}
 
-		calc.position++
-		calc.isCurrentRuneExists = false
-
 		if token != nil {
 			return token, nil
 		}
@@ -116,11 +126,11 @@ func (calc *Calculator) parseExpression() float64 {
 		}
 
 		fmt.Println("[parseExpression v1]", v1)
-		token := calc.nextToken()
+		token := calc.getToken()
 		if token.kind == AddOperatorToken || token.kind == SubOperatorToken {
-			calc.currentToken = nil
 			v1 = token.calc(v1, calc.parseTerm())
 		} else {
+			calc.ungetToken(token)
 			break
 		}
 	}
@@ -136,12 +146,12 @@ func (calc *Calculator) parseTerm() float64 {
 			break
 		}
 
-		token := calc.nextToken()
+		token := calc.getToken()
 		fmt.Println("[parseTerm token]", token)
 		if token.kind == MulOperatorToken || token.kind == DivOperatorToken {
-			calc.currentToken = nil
 			v1 = token.calc(v1, calc.prasePrimaryExpression())
 		} else {
+			calc.ungetToken(token)
 			break
 		}
 	}
@@ -150,19 +160,14 @@ func (calc *Calculator) parseTerm() float64 {
 }
 
 func (calc *Calculator) prasePrimaryExpression() float64 {
-	token := calc.nextToken()
+	token := calc.getToken()
 	fmt.Println("[prasePrimaryExpression]", token)
 	if token.kind == NumberToken {
-		calc.currentToken = nil
 		return token.value
 	} else if token.kind == LPToken {
-		calc.currentToken = nil
-
 		v1 := calc.parseExpression()
-
-		token = calc.nextToken()
+		token = calc.getToken()
 		if token.kind == RPToken {
-			calc.currentToken = nil
 			return v1
 		} else {
 			panic(fmt.Sprintln("invalid expression:", token))
